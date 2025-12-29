@@ -114,7 +114,7 @@ class BankFilter(BaseModel):
 
 
 @app.get("/api/search", include_in_schema=False)
-def search_bank(request: Request, offset: int = 0, limit: int = 10, id: Optional[str] = None):
+def search_bank(request: Request, offset: int = 0, limit: int = 100):
     if not request.session.get("user"):
         return JSONResponse({"detail": "Unauthorized"}, status_code=401)
 
