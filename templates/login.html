@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        /* Wrap input + icon */
+        .password-wrapper {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .password-wrapper input {
+            width: 100%;
+            padding-right: 40px; /* space for icon */
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 16px;
+            color: #555;
+        }
+
+        .toggle-password:hover {
+            color: #4e54c8;
+        }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <h2>Login</h2>
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="post">
+        <input type="email" name="email" placeholder="Email" required>
+
+        <div class="password-wrapper">
+            <input type="password" name="password" placeholder="Password" id="password" required>
+            <span class="toggle-password" id="togglePassword">&#128065;</span> <!-- eye icon -->
+        </div>
+
+        <button type="submit">Login</button>
+    </form>
+</div>
+
+<script>
+    const togglePassword = document.getElementById("togglePassword");
+    const passwordInput = document.getElementById("password");
+
+    togglePassword.addEventListener("click", () => {
+        const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+        passwordInput.setAttribute("type", type);
+        // Optionally change icon
+        togglePassword.textContent = type === "password" ? "\u{1F441}" : "\u{1F576}";
+    });
+</script>
+</body>
+</html>

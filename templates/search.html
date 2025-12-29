@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Bank Branch Search</title>
+    <link href="https://cdn.jsdelivr.net/npm/modern-normalize/modern-normalize.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+<div class="top-bar">
+    <h2>Поиск филиалов банка</h2>
+    <div class="button-group">
+        <button id="logoutBtn">Выйти</button>
+        <button id="clearBtn">Очистить фильтры</button>
+    </div>
+</div>
+
+
+    <div class="table-wrapper">
+        <table id="resultTable">
+            <thead>
+            <tr>
+                <th>Код филиала/ ОБУ</th>
+                <th>Код банка</th>
+                <th>Код области филиала/ ОБУ</th>
+                <th>Код головного офиса банка</th>
+                <th>Код территориального офиса банка</th>
+                <th>Код обсл. ТЦР/ Код закреп. филиала</th>
+                <th>Код обсл.РКЦ филиала/ ОБУ</th>
+                <th>Наименование филиала банка/ ОБУ</th>
+                <th>Адрес филиала банка/ ОБУ</th>
+                <th>Код статуса филиала банка/ ОБУ</th>
+                <th>Дата открытия филиала банка/ ОБУ</th>
+                <th>Дата закрытия филиала банка/ ОБУ</th>
+                <th>Признак активности</th>
+                <th>Дата активизации</th>
+                <th>Дата деактивизации</th>
+                <th>Код района филиала банка/ ОБУ</th>
+                <th>Признак для ЕЭИСВО</th>
+                <th>ИНН</th>
+            </tr>
+            <tr class="filters">
+                <th><input data-col="BANK_ID" placeholder="Фильтр"></th>
+                <th><input data-col="BANK_TYPE" placeholder="Фильтр"></th>
+                <th><input data-col="REGION_ID" placeholder="Фильтр"></th>
+                <th><input data-col="HEADER_ID" placeholder="Фильтр"></th>
+                <th><input data-col="UNION_ID" placeholder="Фильтр"></th>
+                <th><input data-col="TCC_ID" placeholder="Фильтр"></th>
+                <th><input data-col="CCC_ID" placeholder="Фильтр"></th>
+                <th><input data-col="BANK_NAME" placeholder="Фильтр"></th>
+                <th><input data-col="BANK_ADRES" placeholder="Фильтр"></th>
+                <th><input data-col="BANK_STATU" placeholder="Фильтр"></th>
+                <th><input data-col="DATE_OPEN" placeholder="Фильтр"></th>
+                <th><input data-col="DATE_CLOSE" placeholder="Фильтр"></th>
+                <th><input data-col="ACTIVE" placeholder="Фильтр"></th>
+                <th><input data-col="DATE_ACT" placeholder="Фильтр"></th>
+                <th><input data-col="DATE_DEACT" placeholder="Фильтр"></th>
+                <th><input data-col="DISTR" placeholder="Фильтр"></th>
+                <th><input data-col="KOL_OBM" placeholder="Фильтр"></th>
+                <th><input data-col="INN" placeholder="Фильтр"></th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- Pagination buttons -->
+    <div class="pagination">
+        <button id="prevBtn">Назад</button>
+        <span id="pageInfo"></span>
+        <button id="nextBtn">Вперед</button>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    const pageSize = 10;
+    let totalCount = 0;
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+        window.location.href = "/logout";
+    });
+
+    // Clear filters
+    document.getElementById("clearBtn").addEventListener("click", () => {
+        document.querySelectorAll(".filters input").forEach(input => input.value = "");
+        currentPage = 1;
+        loadData();
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadData();
+    });
+
+    // Add input listener for filters
+    document.querySelectorAll(".filters input").forEach(input => {
+        input.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                currentPage = 1; // reset to first page
+                loadData();
+            }
+        });
+    });
+
+    document.getElementById("prevBtn").addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+            loadData();
+        }
+    });
+
+    document.getElementById("nextBtn").addEventListener("click", () => {
+        if (currentPage * pageSize < totalCount) {
+            currentPage++;
+            loadData();
+        }
+    });
+
+    function loadData() {
+    const params = new URLSearchParams();
+
+    // Collect filters as individual query params
+    document.querySelectorAll(".filters input").forEach(input => {
+        const value = input.value.trim();
+        if (value) params.append(input.dataset.col, value);
+    });
+
+    // Add pagination
+    params.append("limit", pageSize);
+    params.append("offset", (currentPage - 1) * pageSize);
+
+    fetch("/api/search?" + params.toString(), { credentials: "same-origin" })
+        .then(res => {
+            if (!res.ok) throw new Error("Unauthorized or server error");
+            return res.json();
+        })
+        .then(response => {
+            const tbody = document.querySelector("#resultTable tbody");
+            tbody.innerHTML = "";
+            totalCount = response.count || 0;
+
+            if (!response.data || response.data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="18" class="no-data">Данные не найдены</td></tr>`;
+                document.getElementById("pageInfo").innerText = "";
+                return;
+            }
+
+            response.data.forEach(row => {
+                tbody.insertAdjacentHTML("beforeend", `
+                    <tr>
+                        <td>${row.BANK_ID ?? ""}</td>
+                        <td>${row.BANK_TYPE ?? ""}</td>
+                        <td>${row.REGION_ID ?? ""}</td>
+                        <td>${row.HEADER_ID ?? ""}</td>
+                        <td>${row.UNION_ID ?? ""}</td>
+                        <td>${row.TCC_ID ?? ""}</td>
+                        <td>${row.CCC_ID ?? ""}</td>
+                        <td>${row.BANK_NAME ?? ""}</td>
+                        <td>${row.BANK_ADRES ?? ""}</td>
+                        <td>${row.BANK_STATU ?? ""}</td>
+                        <td>${row.DATE_OPEN ?? ""}</td>
+                        <td>${row.DATE_CLOSE ?? ""}</td>
+                        <td>${row.ACTIVE ?? ""}</td>
+                        <td>${row.DATE_ACT ?? ""}</td>
+                        <td>${row.DATE_DEACT ?? ""}</td>
+                        <td>${row.DISTR ?? ""}</td>
+                        <td>${row.KOL_OBM ?? ""}</td>
+                        <td>${row.INN ?? ""}</td>
+                    </tr>
+                `);
+            });
+
+            const start = (currentPage - 1) * pageSize + 1;
+            const end = Math.min(currentPage * pageSize, totalCount);
+            document.getElementById("pageInfo").innerText = `Показано ${start}-${end} из ${totalCount}`;
+
+            document.getElementById("prevBtn").classList.toggle("disabled", currentPage === 1);
+            document.getElementById("nextBtn").classList.toggle("disabled", currentPage * pageSize >= totalCount);
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Не удалось загрузить данные. Проверьте вход или сервер");
+        });
+}
+
+</script>
+</body>
+</html>
